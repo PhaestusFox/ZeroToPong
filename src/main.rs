@@ -117,7 +117,7 @@ fn ball_collide(
             ball.translation.x + BWIDTH / 2. > paddle.translation.x - PWIDTH / 2. &&
             ball.translation.y + BWIDTH / 2. > paddle.translation.y - PHIGTH / 2. {
                 velocity.0 *= -1.;
-                velocity.0.y = rand::thread_rng().gen::<f32>() * 100.;
+                velocity.0.y = rand::thread_rng().gen_range(-1.0..1.0) * 100.;
             }
         }
     }
