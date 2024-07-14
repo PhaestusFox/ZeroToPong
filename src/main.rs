@@ -1,9 +1,20 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::WindowResolution};
 use rand::Rng;
+
+const WINDOW_WIDTH: f32 = 1280.;
+const WINDOW_HIGHT: f32 = 720.;
 
 fn main() {
     let mut app = App::new();
-    app.add_plugins(DefaultPlugins);
+    app.add_plugins(DefaultPlugins
+    .set(WindowPlugin {
+        primary_window: Some(Window {
+            resolution: WindowResolution::new(WINDOW_WIDTH, WINDOW_HIGHT),
+            resizable: false,
+            ..Default::default()
+        }),
+        ..Default::default()
+    }));
     app.add_systems(Startup, (spawn_camera, spawn_players, spawn_ball));
     app.add_systems(Update, (move_paddle, move_ball, ball_collide));
     app.run();
@@ -20,15 +31,7 @@ struct Paddle {
 }
 
 fn spawn_players(mut commands: Commands) {
-    commands.spawn(SpriteBundle {
-        sprite: Sprite {
-            color: Color::BLACK,
-            custom_size: Some(Vec2::new(700., 500.)),
-            ..Default::default()
-        },
-        ..Default::default()
-    });
-
+    
     commands.spawn((SpriteBundle {
         transform: Transform::from_translation(Vec3::new(-300., 0., 0.)),
         sprite: Sprite {
@@ -64,12 +67,12 @@ fn move_paddle(
     for (mut pos, settings) in &mut paddles {
         if input.pressed(settings.move_up) {
             pos.translation.y += 100. * time.delta_seconds();
-            pos.translation.y = pos.translation.y.clamp(-250. + 75., 250. - 75.);
+            pos.translation.y = pos.translation.y.clamp((-WINDOW_HIGHT / 2.) + 75., (WINDOW_HIGHT / 2.) - 75.);
         }
 
         if input.pressed(settings.move_down) {
             pos.translation.y -= 100. * time.delta_seconds();
-            pos.translation.y = pos.translation.y.clamp(-250. + 75., 250. - 75.);
+            pos.translation.y = pos.translation.y.clamp((-WINDOW_HIGHT / 2.) + 75., (WINDOW_HIGHT / 2.) - 75.);
         }
     }
 }
