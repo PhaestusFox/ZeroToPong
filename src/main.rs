@@ -31,9 +31,9 @@ struct Paddle {
 }
 
 fn spawn_players(mut commands: Commands) {
-    
+
     commands.spawn((SpriteBundle {
-        transform: Transform::from_translation(Vec3::new(-300., 0., 0.)),
+        transform: Transform::from_translation(Vec3::new(-WINDOW_WIDTH / 2. + 20., 0., 0.)),
         sprite: Sprite {
             color: Color::WHITE,
             custom_size: Some(Vec2::new(10., 150.)),
@@ -46,7 +46,7 @@ fn spawn_players(mut commands: Commands) {
     }));
 
     commands.spawn((SpriteBundle {
-        transform: Transform::from_translation(Vec3::new(300., 0., 0.)),
+        transform: Transform::from_translation(Vec3::new(WINDOW_WIDTH /2. - 20., 0., 0.)),
         sprite: Sprite {
             color: Color::WHITE,
             custom_size: Some(Vec2::new(10., 150.)),
@@ -110,7 +110,7 @@ fn ball_collide(
     paddles: Query<&Transform, With<Paddle>>,
 ) {
     for (ball, mut velocity) in &mut balls {
-        if ball.translation.y.abs() + BWIDTH / 2. > 250. {
+        if ball.translation.y.abs() + BWIDTH / 2. > WINDOW_HIGHT / 2. {
             velocity.0.y *= -1.;
         }
         for paddle in &paddles {
