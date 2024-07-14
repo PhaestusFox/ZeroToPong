@@ -1,4 +1,4 @@
-use bevy::{math::VectorSpace, prelude::*, window::WindowResolution};
+use bevy::{prelude::*, window::WindowResolution};
 use rand::Rng;
 use bevy_rapier2d::prelude::*;
 
@@ -24,9 +24,10 @@ fn main() {
     app.add_plugins(RapierPhysicsPlugin::<NoUserData>::default());
     #[cfg(debug_assertions)]
     app.add_plugins(RapierDebugRenderPlugin::default());
-
+    app.add_event::<GameEvents>();
     app.add_systems(Startup, (spawn_camera, spawn_players, spawn_ball, spawn_border));
-    app.add_systems(Update, (move_paddle));
+    app.add_systems(Update, (move_paddle, detect_reset));
+    app.add_systems(PostUpdate, reset_ball);
     app.run();
 }
 
@@ -40,10 +41,19 @@ struct Paddle {
     move_down: KeyCode
 }
 
-#[derive(Component)]
+#[derive(Component, Clone, Copy)]
 enum Player {
     Player1,
     Player2,
+}
+
+impl Player {
+    fn start_speed(&self) -> Velocity {
+        match self {
+            Player::Player1 => Velocity::linear(Vec2::new(100., 0.)),
+            Player::Player2 => Velocity::linear(Vec2::new(-100., 0.)),
+        }
+    }
 }
 
 fn spawn_border(mut commands: Commands) {
@@ -160,6 +170,8 @@ fn spawn_ball(
     },
     Ball,
     RigidBody::Dynamic,
+    CollidingEntities::default(),
+    ActiveEvents::COLLISION_EVENTS,
     Collider::ball(BALL_RADIUS),
     Velocity::linear(Vec2::new(100., 0.)),
     Restitution {
@@ -167,6 +179,52 @@ fn spawn_ball(
         combine_rule: CoefficientCombineRule::Max,
     }
     ));
+}
+
+fn detect_reset(
+    input: Res<ButtonInput<KeyCode>>,
+    balls: Query<&CollidingEntities, With<Ball>>,
+    goles: Query<&Player, With<Sensor>>,
+    mut game_events: EventWriter<GameEvents>,
+) {
+    if input.just_pressed(KeyCode::Space) {
+        let player = if rand::thread_rng().gen::<bool>() {
+            Player::Player1
+        } else {
+            Player::Player2
+        };
+        game_events.send(GameEvents::ResetBall(player));
+        return;
+    }
+    for ball in &balls {
+        for hit in ball.iter() {
+            if let Ok(player) = goles.get(hit) {
+                game_events.send(GameEvents::ResetBall(*player));
+            }
+        }
+    }
+}
+
+#[derive(Event)]
+enum GameEvents {
+    ResetBall(Player),
+}
+
+fn reset_ball(
+    mut balls: Query<(&mut Transform, &mut Velocity), With<Ball>>,
+    mut game_events: EventReader<GameEvents>,
+) {
+    for events in game_events.read() {
+        match events {
+            GameEvents::ResetBall(player) => {
+                for (mut ball, mut speed) in &mut balls {
+                    ball.translation = Vec3::ZERO;
+                    *speed = player.start_speed();
+                }   
+            },
+            _ => {}
+        }
+    }
 }
 
 const PWIDTH: f32 = 10.;
