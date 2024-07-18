@@ -210,7 +210,7 @@ fn ball_hit(
 fn detect_reset(
     input: Res<ButtonInput<KeyCode>>,
     balls: Query<&CollidingEntities, With<Ball>>,
-    goles: Query<&Player, With<Sensor>>,
+    goals: Query<&Player, With<Sensor>>,
     mut game_events: EventWriter<GameEvents>,
 ) {
     if input.just_pressed(KeyCode::Space) {
@@ -224,7 +224,7 @@ fn detect_reset(
     }
     for ball in &balls {
         for hit in ball.iter() {
-            if let Ok(player) = goles.get(hit) {
+            if let Ok(player) = goals.get(hit) {
                 game_events.send(GameEvents::ResetBall(*player));
                 game_events.send(GameEvents::GainPoint(*player));
             }
@@ -266,25 +266,31 @@ fn spawn_score(
             position_type: PositionType::Absolute,
             margin: UiRect::horizontal(Val::Auto),
             top: Val::ZERO,
-            width: Val::Percent(30.),
-            height: Val::Percent(20.),
-            align_content: AlignContent::Stretch,
-            justify_content: JustifyContent::SpaceBetween,
+            // min_width: Val::Percent(30.), // (optional) should adapt to larger numbers, min_width rather than width
+            // height: Val::Percent(20.), // height inferred by text, so this shouldn't be set
+            padding: UiRect::horizontal(Val::Px(20.)), // if text forces the box to expand add padding
+            display: Display::Grid,
+            grid_template_columns: vec![GridTrack::flex(1.), GridTrack::auto(), GridTrack::flex(1.)], // Equivlent of "1fr auto 1fr" - left and right stay the same
             ..Default::default()
         },
         background_color: BackgroundColor(DARK_GRAY.into()),
         ..Default::default()
     }).with_children(|p| {
+
         p.spawn((TextBundle {
-            text: Text { sections: vec![TextSection {
-                value: "0".to_string(),
-                style: TextStyle {
-                    font_size: 100.,
-                    ..Default::default()
-                }
-            }], justify: JustifyText::Left, linebreak_behavior: bevy::text::BreakLineOn::NoWrap },
+            text: Text {
+              sections: vec![TextSection {
+                  value: "0".to_string(),
+                  style: TextStyle {
+                      font_size: 100.,
+                      ..Default::default()
+                  }
+              }],
+              ..Default::default()
+            },
             ..Default::default()
-        }, Player::Player1));
+        }.with_text_justify(JustifyText::Center),
+        Player::Player1));
 
         p.spawn(TextBundle {
             text: Text { sections: vec![TextSection {
@@ -293,20 +299,26 @@ fn spawn_score(
                     font_size: 100.,
                     ..Default::default()
                 }
-            }], justify: JustifyText::Center, linebreak_behavior: bevy::text::BreakLineOn::NoWrap },
+            }],
+            ..Default::default()
+          },
             ..Default::default()
         });
 
         p.spawn((TextBundle {
-            text: Text { sections: vec![TextSection {
-                value: "0".to_string(),
-                style: TextStyle {
-                    font_size: 100.,
-                    ..Default::default()
-                }
-            }], justify: JustifyText::Right, linebreak_behavior: bevy::text::BreakLineOn::NoWrap },
+            text: Text {
+              sections: vec![TextSection {
+                  value: "0".to_string(),
+                  style: TextStyle {
+                      font_size: 100.,
+                      ..Default::default()
+                  }
+              }],
+              ..Default::default()
+            },
             ..Default::default()
-        }, Player::Player2));
+        }.with_text_justify(JustifyText::Center),
+        Player::Player2));
     });
 }
 
